@@ -1,9 +1,10 @@
 import * as controllers from './controllers'
 import * as routes from './routes'
 import * as services from './services'
+import { FirestoreCollections } from './types/firestore';
 
-export function initializerRoutes() {
-    const userService = new services.UserService();
+export function initializerRoutes(db: FirestoreCollections) {
+    const userService = new services.UserService(db);
     const userController = new controllers.UserController(userService);
     const UsersRoute = new routes.UsersRoute(userController);
 
