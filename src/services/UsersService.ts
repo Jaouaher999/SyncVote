@@ -3,6 +3,8 @@ import { FirestoreCollections } from '../types/firestore';
 import { IResBody } from '../types/api';
 import { firestoreTimestamp } from '../utils/firestore-helper';
 import { encryptPassword } from '../utils/password';
+import { Timestamp } from 'firebase/firestore'
+import { formatUserData } from '../utils/formatData';
 
 export class UserService {
     private db: FirestoreCollections;
@@ -41,9 +43,11 @@ export class UserService {
         const userQuerySnapshot = await this.db.users.get();
 
         for (const doc of userQuerySnapshot.docs) {
+            const formatdatauser = formatUserData(doc.data())
+
             users.push({
                 id: doc.id,
-                ...doc.data()
+                ...formatdatauser
             });
         }
         return {
