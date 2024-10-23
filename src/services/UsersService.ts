@@ -2,6 +2,7 @@ import { User } from '../types/entities/User';
 import { FirestoreCollections } from '../types/firestore';
 import { IResBody } from '../types/api';
 import { firestoreTimestamp } from '../utils/firestore-helper';
+import { encryptPassword } from '../utils/password';
 
 export class UserService {
     private db: FirestoreCollections;
@@ -17,6 +18,8 @@ export class UserService {
             const userRef = this.db.users.doc();
             await userRef.set({
                 ...userData,
+                password: encryptPassword(userData.password as string),
+                role: 'member',
                 createdAt: firestoreTimestamp.now(),
                 updatedAt: firestoreTimestamp.now()
 
@@ -32,4 +35,49 @@ export class UserService {
             }
         }
     }
+
+    async getUsers(): Promise<IResBody> {
+        const users: User[] = [];
+        const userQuerySnapshot = await this.db.users.get();
+
+        for (const doc of userQuerySnapshot.docs) {
+            users.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        }
+        return {
+            status: 200,
+            message: 'User retrieved successfully',
+            data: users
+        }
+
+    }
+
+    /*async getAllUsers(): Promise<IResBody> {
+        const usersSnapshot = await this.db.users.get();
+        const usersList: User[] = [];
+
+        if (!usersSnapshot.empty) {
+            usersSnapshot.forEach((user) => {
+                usersList.push({
+                    id: user.id,
+                    ...user.data()
+                });
+            });
+            return {
+                status: 200,
+                message: 'Users retrieved successfully',
+                data: usersList
+            };
+        } else {
+            return {
+                status: 500,
+                message: 'Error retrieving users'
+            }
+        }
+
+    }*/
+
+
 }

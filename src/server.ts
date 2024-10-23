@@ -33,6 +33,7 @@ app.use(
 const { UsersRoute } = initializerRoutes(db);
 
 app.use(UsersRoute.createRouter());
+app.use(UsersRoute.getRouter());
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
