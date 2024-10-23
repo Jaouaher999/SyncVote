@@ -1,37 +1,37 @@
-import { Post } from '../types/entities/Post';
 import { FirestoreCollections } from '../types/firestore';
 import { IResBody } from '../types/api';
 import { firestoreTimestamp } from '../utils/firestore-helper';
 import { Timestamp } from 'firebase/firestore';
+import { Comment } from '../types/entities/Comment';
 
-export class PostsService {
+export class CommentService {
     private db: FirestoreCollections;
 
     constructor(db: FirestoreCollections) {
         this.db = db;
     }
 
-    async createPost(postData: Post): Promise<IResBody> {
-        const postRef = this.db.posts.doc();
-        await postRef.set({
-            ...postData,
+    async createComment(commentData: Comment): Promise<IResBody> {
+        const commentRef = this.db.comments.doc();
+        await commentRef.set({
+            ...commentData,
             createdAt: firestoreTimestamp.now(),
             updatedAt: firestoreTimestamp.now(),
         });
 
         return {
             status: 201,
-            message: 'Post created successfully!',
+            message: 'Comment created successfully!',
         };
     }
 
 
-    async getPosts(): Promise<IResBody> {
-        const posts: Post[] = [];
-        const postsQuerySnapshot = await this.db.posts.get();
+    async getComments(): Promise<IResBody> {
+        const comments: Comment[] = [];
+        const commentsQuerySnapshot = await this.db.comments.get();
 
-        for (const doc of postsQuerySnapshot.docs) {
-            posts.push({
+        for (const doc of commentsQuerySnapshot.docs) {
+            comments.push({
                 id: doc.id,
                 ...doc.data(),
                 createdAt: (doc.data()?.createdAt as Timestamp)?.toDate(),
@@ -41,10 +41,10 @@ export class PostsService {
 
         return {
             status: 200,
-            message: 'Posts retrieved successfully!',
-            data: posts
+            message: 'Comments retrieved successfully!',
+            data: comments
         };
     }
 
-    
+
 }
