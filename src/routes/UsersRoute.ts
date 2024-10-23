@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UserController } from '../controllers';
-import { validateCreateUser } from '../middlewares/dataValidator';
+import { validateCreateUser, validateLoginUser } from '../middlewares/dataValidator';
 
 export class UsersRoute {
     private userController: UserController;
@@ -14,6 +14,7 @@ export class UsersRoute {
 
         router.post('/users', validateCreateUser, this.userController.createUser.bind(this.userController));
         router.get('/users', this.userController.getUsers.bind(this.userController));
+        router.post('/auth/login', validateLoginUser, this.userController.login.bind(this.userController));
         return router;
     }
 }

@@ -8,7 +8,12 @@ export function initializerRoutes(db: FirestoreCollections) {
     const userController = new controllers.UserController(userService);
     const UsersRoute = new routes.UsersRoute(userController);
 
+    const postsService = new services.PostsService(db);
+    const postsController = new controllers.PostsController(postsService);
+    const PostsRoute = new routes.PostsRoute(postsController);
+
     return {
         UsersRoute,
+        PostsRoute
     }
 }

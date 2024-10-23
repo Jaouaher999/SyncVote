@@ -30,9 +30,10 @@ app.use(
   })
 );
 
-const { UsersRoute } = initializerRoutes(db);
+const { UsersRoute, PostsRoute } = initializerRoutes(db);
 
 app.use(UsersRoute.createRouter());
+app.use(PostsRoute.createRouter());
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });

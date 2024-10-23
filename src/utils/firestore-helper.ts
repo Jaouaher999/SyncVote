@@ -2,6 +2,7 @@ import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FirestoreDataConverter, Timestamp } from 'firebase-admin/firestore';
 
 import { User } from '../types/entities/User';
+import { Post } from '../types/entities/Post';
 import { FirestoreCollections } from '../types/firestore';
 
 initializeApp({
@@ -28,6 +29,7 @@ const dataPoint = <T>(collectionPath: string) => firestore.collection(collection
 
 const db: FirestoreCollections = { // Firestore collections
     users: dataPoint<User>('users'),
+    posts: dataPoint<Post>('posts'),
 };
 
 export { db, firestore, firestoreTimestamp };

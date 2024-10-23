@@ -41,7 +41,6 @@ export class UserController {
         }
     }
 
-
     async getUsers(request: Request, response: Response): Promise<void> {
         try {
             const userResponse = await this.userService.getUsers();
@@ -57,6 +56,34 @@ export class UserController {
                 message: 'Internal server error',
                 data: error
             })
+        }
+    }
+
+    async login(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                const { email, password } = request.body;
+                const userData = { email, password };
+
+                const userResponse = await this.userService.login(userData);
+
+                response.status(userResponse.status).json({
+                    ...userResponse
+                });
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
+                })
+            }
         }
     }
 }

@@ -2,9 +2,9 @@ import { User } from '../types/entities/User';
 import { FirestoreCollections } from '../types/firestore';
 import { IResBody } from '../types/api';
 import { firestoreTimestamp } from '../utils/firestore-helper';
-import { encryptPassword } from '../utils/password';
-import { Timestamp } from 'firebase/firestore'
+import { comparePassword, encryptPassword } from '../utils/password';
 import { formatUserData } from '../utils/formatData';
+import { generateToken } from '../utils/jwt';
 
 export class UserService {
     private db: FirestoreCollections;
@@ -58,30 +58,38 @@ export class UserService {
 
     }
 
-    /*async getAllUsers(): Promise<IResBody> {
-        const usersSnapshot = await this.db.users.get();
-        const usersList: User[] = [];
+    async login(userData: { email: string, password: string }): Promise<IResBody> {
+        const { email, password } = userData;
 
-        if (!usersSnapshot.empty) {
-            usersSnapshot.forEach((user) => {
-                usersList.push({
-                    id: user.id,
-                    ...user.data()
-                });
-            });
+        const userQuerySnapshot = await this.db.users.where('email', '==', email).get();
+
+        if (userQuerySnapshot.empty) {
             return {
-                status: 200,
-                message: 'Users retrieved successfully',
-                data: usersList
-            };
+                status: 401,
+                message: 'Unauthorized'
+            }
         } else {
-            return {
-                status: 500,
-                message: 'Error retrieving users'
+            const isPasswordValid = comparePassword(password, userQuerySnapshot.docs[0].data().password as string);
+
+            if (isPasswordValid) {
+                const formatDataUser = formatUserData(userQuerySnapshot.docs[0].data())
+
+                return {
+                    status: 200,
+                    message: 'User login successfully!',
+                    data: {
+                        user: {
+                            ...formatDataUser
+                        },
+                        token: generateToken(userQuerySnapshot.docs[0].id)
+                    }
+                }
+            } else {
+                return {
+                    status: 401,
+                    message: 'Unauthorized'
+                }
             }
         }
-
-    }*/
-
-
+    }
 }
