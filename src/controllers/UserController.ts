@@ -41,9 +41,75 @@ export class UserController {
         }
     }
 
+    async updateUser(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                const userId = request.params.id;
+                const updatedUserData = request.body;
+
+                const userResponse = await this.userService.updateUser(userId, updatedUserData);
+
+
+                response.status(userResponse.status).send({
+                    ...userResponse
+                })
+
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
+                })
+            }
+        }
+    }
+
+    async deleteUser(request: Request, response: Response): Promise<void> {
+        try {
+            const userId = request.params.id;
+
+            const userResponse = await this.userService.deleteUser(userId);
+
+            response.status(userResponse.status).json({
+                ...userResponse
+            });
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error'
+            });
+        }
+    }
+
     async getUsers(request: Request, response: Response): Promise<void> {
         try {
             const userResponse = await this.userService.getUsers();
+
+
+            response.status(userResponse.status).send({
+                ...userResponse
+            })
+
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error',
+                data: error
+            })
+        }
+    }
+
+    async findByEmail(request: Request, response: Response): Promise<void> {
+        try {
+            const userEmail = request.params.email;
+            const userResponse = await this.userService.findByEmail(userEmail);
 
 
             response.status(userResponse.status).send({

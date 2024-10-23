@@ -38,6 +38,68 @@ export class UserService {
         }
     }
 
+    async updateUser(userId: string, updatedUser: Partial<User>): Promise<IResBody> {
+        const userRef = this.db.users.doc(userId);
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return {
+                status: 404,
+                message: 'User not found'
+            }
+        }
+
+        await userRef.update({
+            ...updatedUser,
+            updatedAt: firestoreTimestamp.now()
+        })
+
+        return {
+            status: 200,
+            message: 'User updated'
+        }
+    }
+
+    async deleteUser(userId: string): Promise<IResBody> {
+        const userRef = this.db.users.doc(userId);
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return {
+                status: 404,
+                message: 'User not found'
+            }
+        }
+
+        await userRef.delete();
+
+        return {
+            status: 200,
+            message: 'User deleted successfully'
+        }
+    }
+
+    async findByEmail(email: string): Promise<IResBody> {
+        const userQuerySnapshot = await this.db.users.where('email', '==', email).get();
+        if (userQuerySnapshot.empty) {
+            return {
+                status: 404,
+                message: 'User not found'
+            }
+        }
+
+        const userRef = userQuerySnapshot.docs[0];
+
+        const formatdatauser = formatUserData(userRef.data());
+
+        return {
+            status: 200,
+            message: 'User retrieved successfully',
+            data: formatdatauser
+        }
+    }
+
+
     async getUsers(): Promise<IResBody> {
         const users: User[] = [];
         const userQuerySnapshot = await this.db.users.get();
@@ -52,7 +114,7 @@ export class UserService {
         }
         return {
             status: 200,
-            message: 'User retrieved successfully',
+            message: 'Users retrieved successfully',
             data: users
         }
 
