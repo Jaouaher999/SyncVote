@@ -128,9 +128,11 @@ export class UserService {
                 });
             }
 
-            await this.redisClient.set(cachKey, JSON.stringify(users));
+            await this.redisClient.set(cachKey, JSON.stringify(users), {
+                EX: 60
+            });
         }
-
+        console.log(users.length);
         return {
             status: 200,
             message: 'Users retrieved successfully',
