@@ -90,12 +90,20 @@ export class UserController {
 
     async getUsers(request: Request, response: Response): Promise<void> {
         try {
-            const userResponse = await this.userService.getUsers();
+            if (request.userRole == 'admin') {
+                const userResponse = await this.userService.getUsers();
 
 
-            response.status(userResponse.status).send({
-                ...userResponse
-            })
+                response.status(userResponse.status).send({
+                    ...userResponse
+                })
+            } else {
+                response.status(401).json({
+                    status: 401,
+                    message: 'Unauthorized'
+                })
+            }
+
 
         } catch (error) {
             response.status(500).json({
@@ -106,15 +114,22 @@ export class UserController {
         }
     }
 
-    async findByEmail(request: Request, response: Response): Promise<void> {
+    async getUserById(request: Request, response: Response): Promise<void> {
         try {
-            const userEmail = request.params.email;
-            const userResponse = await this.userService.findByEmail(userEmail);
+            if (request.params.id) {
+                const userResponse = await this.userService.getUserById(request.params.id);
 
 
-            response.status(userResponse.status).send({
-                ...userResponse
-            })
+                response.status(userResponse.status).send({
+                    ...userResponse
+                });
+            } else {
+                response.status(404).json({
+                    status: 404,
+                    message: 'User not found'
+                })
+            }
+
 
         } catch (error) {
             response.status(500).json({

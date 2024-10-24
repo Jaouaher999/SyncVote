@@ -5,6 +5,7 @@ import { firestoreTimestamp } from '../utils/firestore-helper';
 import { comparePassword, encryptPassword } from '../utils/password';
 import { formatUserData } from '../utils/formatData';
 import { generateToken } from '../utils/jwt';
+import { Timestamp } from 'firebase/firestore';
 
 export class UserService {
     private db: FirestoreCollections;
@@ -79,23 +80,27 @@ export class UserService {
         }
     }
 
-    async findByEmail(email: string): Promise<IResBody> {
-        const userQuerySnapshot = await this.db.users.where('email', '==', email).get();
-        if (userQuerySnapshot.empty) {
+    async getUserById(userId: string): Promise<IResBody> {
+        const userQuerySnapshot = await this.db.users.doc(userId).get();
+
+        if (!userQuerySnapshot.exists) {
             return {
                 status: 404,
                 message: 'User not found'
             }
         }
 
-        const userRef = userQuerySnapshot.docs[0];
-
-        const formatdatauser = formatUserData(userRef.data());
+        const formatdatauser = formatUserData(userQuerySnapshot.data());
 
         return {
             status: 200,
             message: 'User retrieved successfully',
-            data: formatdatauser
+            data: {
+                id: userId,
+                ...formatdatauser,
+                createdAt: (userQuerySnapshot.data()?.createdAt as Timestamp)?.toDate(),
+                updatedAt: (userQuerySnapshot.data()?.updatedAt as Timestamp)?.toDate(),
+            }
         }
     }
 
@@ -143,7 +148,7 @@ export class UserService {
                         user: {
                             ...formatDataUser
                         },
-                        token: generateToken(userQuerySnapshot.docs[0].id)
+                        token: generateToken(userQuerySnapshot.docs[0].id, formatDataUser.role)
                     }
                 }
             } else {

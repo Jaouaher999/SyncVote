@@ -22,7 +22,12 @@ export class PostsController {
             try {
                 const { title, description, categories } = request.body;
 
-                const postData = { title, description, categories };
+                const postData = {
+                    title,
+                    description,
+                    categories,
+                    createdBy: request.userId
+                };
 
                 const postResponse = await this.postsService.createPost(postData);
 

@@ -15,6 +15,7 @@ export class PostsService {
         const postRef = this.db.posts.doc();
         await postRef.set({
             ...postData,
+            voteCount: 0,
             createdAt: firestoreTimestamp.now(),
             updatedAt: firestoreTimestamp.now(),
         });
@@ -46,5 +47,5 @@ export class PostsService {
         };
     }
 
-    
+
 }
