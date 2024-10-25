@@ -41,45 +41,32 @@ export class UserController {
         }
     }
 
-    async updateUser(request: Request, response: Response): Promise<void> {
-        const errors = validationResult(request);
-
-        if (!errors.isEmpty()) {
-            response.status(400).json({
-                status: 400,
-                message: 'Bad request',
-                data: errors.array()
-            })
-        } else {
-            try {
-                const userId = request.params.id;
-                const updatedUserData = request.body;
-
-                const userResponse = await this.userService.updateUser(userId, updatedUserData);
-
-
-                response.status(userResponse.status).send({
-                    ...userResponse
-                })
-
-            } catch (error) {
-                response.status(500).json({
-                    status: 500,
-                    message: 'Internal server error'
-                })
-            }
-        }
-    }
-
     async deleteUser(request: Request, response: Response): Promise<void> {
         try {
-            const userId = request.params.id;
+            if (request.userRole == 'admin') {
+                if (request.params.id) {
+                    const userId = request.params.id;
 
-            const userResponse = await this.userService.deleteUser(userId);
+                    const userResponse = await this.userService.deleteUser(userId);
 
-            response.status(userResponse.status).json({
-                ...userResponse
-            });
+                    response.status(userResponse.status).json({
+                        ...userResponse
+                    });
+                } else {
+                    response.status(404).json({
+                        status: 404,
+                        message: 'User not found'
+                    })
+                }
+
+            } else {
+                response.status(401).json({
+                    status: 401,
+                    message: 'Unauthorized'
+                })
+            }
+
+
         } catch (error) {
             response.status(500).json({
                 status: 500,
@@ -114,23 +101,76 @@ export class UserController {
         }
     }
 
-    async getUserById(request: Request, response: Response): Promise<void> {
-        try {
-            if (request.params.id) {
-                const userResponse = await this.userService.getUserById(request.params.id);
+    async updateUser(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                if (request.userId == request.params.id || request.userRole == 'admin') {
+                    if (request.params.id) {
+                        const userId = request.params.id;
+                        const updatedUserData = request.body;
+
+                        delete updatedUserData.role;
+
+                        const userResponse = await this.userService.updateUser(userId, updatedUserData);
 
 
-                response.status(userResponse.status).send({
-                    ...userResponse
-                });
-            } else {
-                response.status(404).json({
-                    status: 404,
-                    message: 'User not found'
+                        response.status(userResponse.status).send({
+                            ...userResponse
+                        })
+                    } else {
+                        response.status(404).json({
+                            status: 404,
+                            message: 'User not found'
+                        })
+                    }
+
+                } else {
+                    response.status(401).json({
+                        status: 401,
+                        message: 'Unauthorized'
+                    })
+                }
+
+
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
                 })
             }
+        }
+    }
+
+    async getUserById(request: Request, response: Response): Promise<void> {
+        try {
+            if (request.userRole == 'admin') {
+                if (request.params.id) {
+                    const userResponse = await this.userService.getUserById(request.params.id);
 
 
+                    response.status(userResponse.status).send({
+                        ...userResponse
+                    });
+                } else {
+                    response.status(404).json({
+                        status: 404,
+                        message: 'User not found'
+                    })
+                }
+            } else {
+                response.status(401).json({
+                    status: 401,
+                    message: 'Unauthorized'
+                })
+            }
         } catch (error) {
             response.status(500).json({
                 status: 500,

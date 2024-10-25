@@ -52,7 +52,7 @@ export class UserService {
                 message: 'User not found'
             }
         }
-
+        
         await userRef.update({
             ...updatedUser,
             updatedAt: firestoreTimestamp.now()
@@ -109,7 +109,7 @@ export class UserService {
 
 
     async getUsers(): Promise<IResBody> {
-        const cachKey = 'users';
+        const cachKey = 'usersCach';
         let users: User[] = [];
 
         const cachedUsers = await this.redisClient.get(cachKey);
