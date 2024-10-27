@@ -44,10 +44,11 @@ const startRedis = async () => {
 
 startRedis();
 
-const { UsersRoute, PostsRoute } = initializerRoutes(db, redisClient);
+const { usersRoute, postsRoute, commentsRoute } = initializerRoutes(db, redisClient);
 
-app.use(UsersRoute.createRouter());
-app.use(PostsRoute.createRouter());
+app.use(usersRoute.createRouter());
+app.use(postsRoute.createRouter());
+app.use(commentsRoute.createRouter());
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });

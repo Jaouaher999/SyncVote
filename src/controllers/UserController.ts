@@ -83,12 +83,12 @@ export class UserController {
 
                 response.status(userResponse.status).send({
                     ...userResponse
-                })
+                });
             } else {
                 response.status(401).json({
                     status: 401,
                     message: 'Unauthorized'
-                })
+                });
             }
 
 

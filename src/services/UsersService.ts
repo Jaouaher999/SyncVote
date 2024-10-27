@@ -52,7 +52,7 @@ export class UserService {
                 message: 'User not found'
             }
         }
-        
+
         await userRef.update({
             ...updatedUser,
             updatedAt: firestoreTimestamp.now()
@@ -129,10 +129,9 @@ export class UserService {
             }
 
             await this.redisClient.set(cachKey, JSON.stringify(users), {
-                EX: 60
+                EX: 3600
             });
         }
-        console.log(users.length);
         return {
             status: 200,
             message: 'Users retrieved successfully',
