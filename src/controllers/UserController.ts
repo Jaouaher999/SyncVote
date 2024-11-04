@@ -112,7 +112,7 @@ export class UserController {
             })
         } else {
             try {
-                if (request.userId == request.params.id || request.userRole == 'admin') {
+                if (request.userRole == 'admin') {
                     if (request.params.id) {
                         const userId = request.params.id;
                         const updatedUserData = request.body;
@@ -138,6 +138,39 @@ export class UserController {
                         message: 'Unauthorized'
                     })
                 }
+
+
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
+                })
+            }
+        }
+    }
+
+    async updateConnectedUser(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                const userId = request.userId;
+                const updatedUserData = request.body;
+
+                delete updatedUserData.role;
+
+                const userResponse = await this.userService.updateConnectedUser(userId as string, updatedUserData);
+
+
+                response.status(userResponse.status).send({
+                    ...userResponse
+                })
 
 
             } catch (error) {
@@ -199,6 +232,37 @@ export class UserController {
                 response.status(userResponse.status).json({
                     ...userResponse
                 });
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
+                })
+            }
+        }
+    }
+
+    async changePassword(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                const userId = request.userId;
+                const { newPassword, oldPassword } = request.body;
+
+                const userResponse = await this.userService.changePassword(userId as string, newPassword, oldPassword);
+
+
+                response.status(userResponse.status).send({
+                    ...userResponse
+                })
+
+
             } catch (error) {
                 response.status(500).json({
                     status: 500,

@@ -3,7 +3,8 @@ import { IResBody } from '../types/api';
 import { firestoreTimestamp } from '../utils/firestore-helper';
 import { Timestamp } from 'firebase/firestore';
 import { Comment } from '../types/entities/Comment';
-import { formatPostData } from '../utils/formatData';
+import { formatCommentData } from '../utils/formatData';
+import { firestore } from 'firebase-admin';
 
 export class CommentService {
     private db: FirestoreCollections;
@@ -12,10 +13,11 @@ export class CommentService {
         this.db = db;
     }
 
-    async createComment(commentData: Comment): Promise<IResBody> {
+    async createComment(commentData: Comment, postsId: string): Promise<IResBody> {
         const commentRef = this.db.comments.doc();
         await commentRef.set({
             ...commentData,
+            postId: postsId,
             voteCount: 0,
             createdAt: firestoreTimestamp.now(),
             updatedAt: firestoreTimestamp.now(),
@@ -30,10 +32,10 @@ export class CommentService {
 
     async getCommentsByPostId(postId: string): Promise<IResBody> {
         const comments: Comment[] = [];
-        const commentsQuerySnapshot = await this.db.comments.where('createdBy', '==', postId).get();
+        const commentsQuerySnapshot = await this.db.comments.where('postId', '==', postId).get();
 
         for (const doc of commentsQuerySnapshot.docs) {
-            const formadatacomment = formatPostData(doc.data());
+            const formadatacomment = formatCommentData(doc.data());
             comments.push({
                 id: doc.id,
                 ...formadatacomment,
@@ -50,6 +52,8 @@ export class CommentService {
     }
 
     async updateComment(userId: string, commentId: string, updatedComment: Partial<Comment>): Promise<IResBody> {
+        const userRef = await this.db.users.doc(userId).get();
+
         const commentRef = this.db.comments.doc(commentId);
         const commentDoc = await commentRef.get();
 
@@ -59,7 +63,7 @@ export class CommentService {
                 message: 'Comment not found'
             }
         }
-        if (userId == commentDoc.data()?.createdBy) {
+        if (userId == commentDoc.data()?.createdBy || userRef.data()?.role == 'admin') {
             await commentRef.update({
                 ...updatedComment,
                 updatedAt: firestoreTimestamp.now()
@@ -76,7 +80,9 @@ export class CommentService {
         }
     }
 
-    async deleteComment(commentId: string): Promise<IResBody> {
+    async deleteComment(userId: string, commentId: string): Promise<IResBody> {
+        const userRef = await this.db.users.doc(userId).get();
+
         const commentRef = this.db.comments.doc(commentId);
         const commentDoc = await commentRef.get();
 
@@ -87,13 +93,105 @@ export class CommentService {
             }
         }
 
-        await commentRef.delete();
+        if (userId == commentDoc.data()?.createdBy || userRef.data()?.role == 'admin') {
+            await commentRef.delete();
 
-        return {
-            status: 200,
-            message: 'Comment deleted successfully'
+            return {
+                status: 200,
+                message: 'Comment deleted successfully'
+            }
+        } else {
+            return {
+                status: 401,
+                message: 'Unauthorized'
+            }
         }
     }
 
+    async getCommentById(commentId: string): Promise<IResBody> {
+        const commentQuerySnapshot = await this.db.comments.doc(commentId).get();
+
+        if (!commentQuerySnapshot.exists) {
+            return {
+                status: 404,
+                message: 'Comment not found'
+            }
+        }
+
+        const formatdatacomment = formatCommentData(commentQuerySnapshot.data());
+
+        return {
+            status: 200,
+            message: 'Comment retrieved successfully',
+            data: {
+                id: commentId,
+                ...formatdatacomment,
+                createdAt: (commentQuerySnapshot.data()?.createdAt as Timestamp)?.toDate(),
+                updatedAt: (commentQuerySnapshot.data()?.updatedAt as Timestamp)?.toDate(),
+            }
+        }
+    }
+
+    async upVote(userId: string, commentId: string): Promise<IResBody> {
+        const userRef = await this.db.users.doc(userId).get();
+
+        const commentRef = this.db.comments.doc(commentId);
+        const commentDoc = await commentRef.get();
+
+        if (!commentDoc.exists) {
+            return {
+                status: 404,
+                message: 'Comment not found'
+            }
+        }
+
+        if (commentDoc.data()?.usersVote?.includes(userRef.id)) {
+            return {
+                status: 404,
+                message: 'User already voted'
+            }
+        } else {
+            await commentRef.update({
+                ...commentDoc.data(),
+                usersVote: firestore.FieldValue.arrayUnion(userRef.id),
+                voteCount: firestore.FieldValue.increment(1)
+            });
+            return {
+                status: 200,
+                message: 'Vote updated'
+            }
+        }
+    }
+
+    async downVote(userId: string, commentId: string): Promise<IResBody> {
+        const userRef = await this.db.users.doc(userId).get();
+
+        const commentRef = this.db.comments.doc(commentId);
+        const commentDoc = await commentRef.get();
+
+        if (!commentDoc.exists) {
+            return {
+                status: 404,
+                message: 'Comment not found'
+            }
+        }
+
+        if (commentDoc.data()?.usersVote?.includes(userRef.id)) {
+            return {
+                status: 404,
+                message: 'User already voted'
+            }
+        } else {
+            await commentRef.update({
+                ...commentDoc.data(),
+                usersVote: firestore.FieldValue.arrayUnion(userRef.id),
+                voteCount: firestore.FieldValue.increment(-1)
+            });
+            return {
+                status: 200,
+                message: 'Vote updated'
+            }
+        }
+    }
 
 }

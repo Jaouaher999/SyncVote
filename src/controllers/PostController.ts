@@ -46,26 +46,18 @@ export class PostsController {
 
     async deletePost(request: Request, response: Response): Promise<void> {
         try {
-            if (request.userRole == 'admin') {
-                if (request.params.id) {
-                    const postId = request.params.id;
+            if (request.params.id) {
+                const postId = request.params.id;
 
-                    const postResponse = await this.postsService.deletePost(postId);
+                const postResponse = await this.postsService.deletePost(postId, request.userId as string);
 
-                    response.status(postResponse.status).json({
-                        ...postResponse
-                    });
-                } else {
-                    response.status(404).json({
-                        status: 404,
-                        message: 'Post not found'
-                    })
-                }
-
+                response.status(postResponse.status).json({
+                    ...postResponse
+                });
             } else {
-                response.status(401).json({
-                    status: 401,
-                    message: 'Unauthorized'
+                response.status(404).json({
+                    status: 404,
+                    message: 'Post not found'
                 })
             }
 
@@ -80,18 +72,29 @@ export class PostsController {
 
     async getPosts(request: Request, response: Response): Promise<void> {
         try {
-            if (request.userRole == 'admin') {
-                const postsResponse = await this.postsService.getPosts();
+            const category = request.query.category as string | undefined;
+            const postsResponse = await this.postsService.getPosts(category);
 
-                response.status(postsResponse.status).send({
-                    ...postsResponse,
-                });
-            } else {
-                response.status(401).json({
-                    status: 401,
-                    message: 'Unauthorized'
-                });
-            }
+            response.status(postsResponse.status).send({
+                ...postsResponse,
+            });
+
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error',
+                data: error
+            });
+        }
+    }
+
+    async getPostsByUserId(request: Request, response: Response): Promise<void> {
+        console.log('1111');
+        try {
+            const postsResponse = await this.postsService.getPostsByUserId(request.params.userId);
+            response.status(postsResponse.status).send({
+                ...postsResponse,
+            });
 
         } catch (error) {
             response.status(500).json({
@@ -113,30 +116,20 @@ export class PostsController {
             })
         } else {
             try {
-                if (request.userRole == 'admin') {
-                    if (request.params.id) {
-                        const postId = request.params.id;
-                        const updatedPostData = request.body;
+                if (request.params.id) {
+                    const postId = request.params.id;
+                    const updatedPostData = request.body;
 
-                        delete updatedPostData.role;
-
-                        const postResponse = await this.postsService.updatePost(request.userId as string, postId, updatedPostData);
+                    const postResponse = await this.postsService.updatePost(request.userId as string, postId, updatedPostData);
 
 
-                        response.status(postResponse.status).send({
-                            ...postResponse
-                        })
-                    } else {
-                        response.status(404).json({
-                            status: 404,
-                            message: 'Post not found'
-                        })
-                    }
-
+                    response.status(postResponse.status).send({
+                        ...postResponse
+                    })
                 } else {
-                    response.status(401).json({
-                        status: 401,
-                        message: 'Unauthorized'
+                    response.status(404).json({
+                        status: 404,
+                        message: 'Post not found'
                     })
                 }
             } catch (error) {
@@ -150,24 +143,17 @@ export class PostsController {
 
     async getPostById(request: Request, response: Response): Promise<void> {
         try {
-            if (request.userRole == 'admin') {
-                if (request.params.id) {
-                    const postResponse = await this.postsService.getPostById(request.params.id);
+            if (request.params.id) {
+                const postResponse = await this.postsService.getPostById(request.params.id);
 
 
-                    response.status(postResponse.status).send({
-                        ...postResponse
-                    });
-                } else {
-                    response.status(404).json({
-                        status: 404,
-                        message: 'Post not found'
-                    })
-                }
+                response.status(postResponse.status).send({
+                    ...postResponse
+                });
             } else {
-                response.status(401).json({
-                    status: 401,
-                    message: 'Unauthorized'
+                response.status(404).json({
+                    status: 404,
+                    message: 'Post not found'
                 })
             }
         } catch (error) {
@@ -176,6 +162,74 @@ export class PostsController {
                 message: 'Internal server error',
                 data: error
             })
+        }
+    }
+
+    async upVote(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                if (request.params.id) {
+                    const postId = request.params.id;
+
+                    const postResponse = await this.postsService.upVote(request.userId as string, postId);
+
+                    response.status(postResponse.status).send({
+                        ...postResponse
+                    })
+                } else {
+                    response.status(404).json({
+                        status: 404,
+                        message: 'Post not found'
+                    })
+                }
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
+                })
+            }
+        }
+    }
+
+    async downVote(request: Request, response: Response): Promise<void> {
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            response.status(400).json({
+                status: 400,
+                message: 'Bad request',
+                data: errors.array()
+            })
+        } else {
+            try {
+                if (request.params.id) {
+                    const postId = request.params.id;
+
+                    const postResponse = await this.postsService.downVote(request.userId as string, postId);
+
+                    response.status(postResponse.status).send({
+                        ...postResponse
+                    })
+                } else {
+                    response.status(404).json({
+                        status: 404,
+                        message: 'Post not found'
+                    })
+                }
+            } catch (error) {
+                response.status(500).json({
+                    status: 500,
+                    message: 'Internal server error'
+                })
+            }
         }
     }
 }

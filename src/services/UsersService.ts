@@ -64,6 +64,19 @@ export class UserService {
         }
     }
 
+    async updateConnectedUser(userId: string, updatedUser: Partial<User>): Promise<IResBody> {
+        const userRef = this.db.users.doc(userId);
+        await userRef.update({
+            ...updatedUser,
+            updatedAt: firestoreTimestamp.now()
+        })
+
+        return {
+            status: 200,
+            message: 'User updated'
+        }
+    }
+
     async deleteUser(userId: string): Promise<IResBody> {
         const userRef = this.db.users.doc(userId);
         const userDoc = await userRef.get();
@@ -109,7 +122,7 @@ export class UserService {
 
 
     async getUsers(): Promise<IResBody> {
-        const cachKey = 'usersCach';
+        const cachKey = 'userCach';
         let users: User[] = [];
 
         const cachedUsers = await this.redisClient.get(cachKey);
@@ -171,6 +184,30 @@ export class UserService {
                     status: 401,
                     message: 'Unauthorized'
                 }
+            }
+        }
+    }
+
+    async changePassword(userId: string, newPassword: string, oldPassword: string): Promise<IResBody> {
+        const userRef = await this.db.users.doc(userId);
+        const userDoc = await userRef.get();
+
+        const isPasswordValid = comparePassword(oldPassword, userDoc.data()?.password as string);
+
+        if (isPasswordValid) {
+            await userRef.update({
+                ...userDoc.data(),
+                password: encryptPassword(newPassword),
+                updatedAt: firestoreTimestamp.now()
+            });
+            return {
+                status: 200,
+                message: 'Password changed succesfully'
+            }
+        } else {
+            return {
+                status: 401,
+                message: 'Unauthorized'
             }
         }
     }

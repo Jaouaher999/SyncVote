@@ -1,6 +1,6 @@
-import {Timestamp} from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 
-export interface Post{
+export interface Post {
     id?: string;
     title?: string;
     description?: string;
@@ -9,4 +9,5 @@ export interface Post{
     createdBy?: string;
     createdAt?: Timestamp | Date;
     updatedAt?: Timestamp | Date;
+    usersVote?: string[];
 }

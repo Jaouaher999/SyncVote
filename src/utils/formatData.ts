@@ -19,6 +19,7 @@ export const formatPostData = (postData?: Post): Partial<Post> => {
     if (postData) {
         const post = { ...postData };
 
+        delete post.usersVote;
         delete post.createdAt;
         delete post.updatedAt;
         return post;
