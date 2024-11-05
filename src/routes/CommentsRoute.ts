@@ -15,6 +15,7 @@ export class CommentsRoute {
 
         router.get('/comments/post/:postId', this.commentController.getComments.bind(this.commentController));
         router.get('/comments/:id', this.commentController.getCommentById.bind(this.commentController));
+        router.get('/comments/userId/:userId', this.commentController.getCommentByUserId.bind(this.commentController));
         router.post('/comments/:postId', authJwt.verifyToken, validateCreateComment, this.commentController.createComment.bind(this.commentController));
         router.put('/comments/:id', authJwt.verifyToken, this.commentController.updateComment.bind(this.commentController));
         router.delete('/comments/:id', authJwt.verifyToken, this.commentController.deleteComment.bind(this.commentController));

@@ -145,6 +145,30 @@ export class CommentController {
         }
     }
 
+    async getCommentByUserId(request: Request, response: Response): Promise<void> {
+        try {
+            if (request.params.userId) {
+                const commentResponse = await this.commentService.getCommentsByUserId(request.params.userId);
+
+
+                response.status(commentResponse.status).send({
+                    ...commentResponse
+                });
+            } else {
+                response.status(404).json({
+                    status: 404,
+                    message: 'Comments not found'
+                })
+            }
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error',
+                data: error
+            })
+        }
+    }
+
     async upVote(request: Request, response: Response): Promise<void> {
         const errors = validationResult(request);
 

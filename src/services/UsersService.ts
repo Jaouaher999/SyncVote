@@ -7,14 +7,20 @@ import { formatUserData } from '../utils/formatData';
 import { generateToken } from '../utils/jwt';
 import { Timestamp } from 'firebase/firestore';
 import { RedisClientType } from 'redis';
+import { PostsService } from './PostService';
+import { CommentService } from './CommentService';
 
 export class UserService {
     private db: FirestoreCollections;
     private redisClient: RedisClientType;
+    private postService: PostsService;
+    private commentService: CommentService;
 
-    constructor(db: FirestoreCollections, redisClient: RedisClientType) {
+    constructor(db: FirestoreCollections, redisClient: RedisClientType, postService: PostsService, commentService: CommentService) {
         this.db = db;
         this.redisClient = redisClient;
+        this.postService = postService;
+        this.commentService = commentService;
     }
 
     async createUser(userData: User): Promise<IResBody> {
@@ -120,6 +126,28 @@ export class UserService {
         }
     }
 
+    async getUserByUsername(username: string): Promise<IResBody> {
+        const userQuerySnapshot = await this.db.users.where('username', '==', username).get();
+
+        if (userQuerySnapshot.empty) {
+            return {
+                status: 404,
+                message: 'User not found'
+            }
+        }
+
+        const formatdatauser = formatUserData(userQuerySnapshot.docs[0].data());
+
+        return {
+            status: 200,
+            message: 'User retrieved successfully',
+            data: {
+                id: userQuerySnapshot.docs[0].data().id,
+                ...formatdatauser
+            }
+        }
+    }
+
 
     async getUsers(): Promise<IResBody> {
         const cachKey = 'userCach';
@@ -145,6 +173,14 @@ export class UserService {
                 EX: 3600
             });
         }
+
+        if (users.length === 0) {
+            return {
+                status: 404,
+                message: 'No Users found'
+            };
+        }
+
         return {
             status: 200,
             message: 'Users retrieved successfully',
@@ -210,5 +246,37 @@ export class UserService {
                 message: 'Unauthorized'
             }
         }
+    }
+
+    async getUserFeed(userId: string): Promise<IResBody> {
+        const userRef = await this.db.users.doc(userId);
+        const userDoc = await userRef.get();
+
+
+        const posts = await this.postService.getPostsByUserId(userId);
+        const comments = await this.commentService.getCommentsByUserId(userId);
+
+        if (!userDoc.exists) {
+            return {
+                status: 404,
+                message: 'User not found'
+            }
+        }
+
+        const formattedUserData = formatUserData(userDoc.data());
+
+        return {
+            status: 200,
+            message: 'User feed retrieved successfully',
+            data: {
+                user: {
+                    id: userDoc.id,
+                    ...formattedUserData
+                },
+                posts,
+                comments
+            }
+        };
+
     }
 }

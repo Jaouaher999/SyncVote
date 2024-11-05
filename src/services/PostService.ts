@@ -48,9 +48,7 @@ export class PostsService {
                 const formatdatapost = formatPostData(doc.data());
                 posts.push({
                     id: doc.id,
-                    ...formatdatapost,
-                    createdAt: (doc.data()?.createdAt as Timestamp)?.toDate(),
-                    updatedAt: (doc.data()?.updatedAt as Timestamp)?.toDate(),
+                    ...formatdatapost
                 });
             }
 
@@ -58,6 +56,14 @@ export class PostsService {
                 EX: 3600
             });
         }
+
+        if (posts.length === 0) {
+            return {
+                status: 404,
+                message: 'No posts found'
+            };
+        }
+        
         return {
             status: 200,
             message: 'Posts retrieved successfully!',
@@ -111,9 +117,29 @@ export class PostsService {
             message: 'Post retrieved successfully',
             data: {
                 id: postId,
-                ...formatdatapost,
-                createdAt: (postQuerySnapshot.data()?.createdAt as Timestamp)?.toDate(),
-                updatedAt: (postQuerySnapshot.data()?.updatedAt as Timestamp)?.toDate(),
+                ...formatdatapost
+            }
+        }
+    }
+
+    async getPostByTitle(title: string): Promise<IResBody> {
+        const postQuerySnapshot = await this.db.posts.where('title', '==', title).get();
+
+        if (postQuerySnapshot.empty) {
+            return {
+                status: 404,
+                message: 'Post not found'
+            }
+        }
+
+        const formatdatapost = formatPostData(postQuerySnapshot.docs[0].data());
+
+        return {
+            status: 200,
+            message: 'Post retrieved successfully',
+            data: {
+                id: postQuerySnapshot.docs[0].data().id,
+                ...formatdatapost
             }
         }
     }
@@ -173,6 +199,14 @@ export class PostsService {
                 EX: 3600
             });
         }
+
+        if (posts.length === 0) {
+            return {
+                status: 404,
+                message: 'No posts found'
+            };
+        }
+
         return {
             status: 200,
             message: 'Posts retrieved successfully!',

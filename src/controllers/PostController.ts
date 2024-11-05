@@ -165,6 +165,30 @@ export class PostsController {
         }
     }
 
+    async getPostByTitle(request: Request, response: Response): Promise<void> {
+        try {
+            if (request.params.title) {
+                const postResponse = await this.postsService.getPostByTitle(request.params.title);
+
+
+                response.status(postResponse.status).send({
+                    ...postResponse
+                });
+            } else {
+                response.status(404).json({
+                    status: 404,
+                    message: 'Post not found'
+                })
+            }
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error',
+                data: error
+            })
+        }
+    }
+
     async upVote(request: Request, response: Response): Promise<void> {
         const errors = validationResult(request);
 

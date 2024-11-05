@@ -213,6 +213,53 @@ export class UserController {
         }
     }
 
+    async getUserFeed(request: Request, response: Response): Promise<void> {
+        try {
+            if (request.params.id) {
+                const userResponse = await this.userService.getUserFeed(request.params.id);
+
+                response.status(userResponse.status).send({
+                    ...userResponse
+                });
+            } else {
+                response.status(404).json({
+                    status: 404,
+                    message: 'User not found'
+                })
+            }
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error',
+                data: error
+            })
+        }
+    }
+
+    async getUserByUsername(request: Request, response: Response): Promise<void> {
+        try {
+            if (request.params.username) {
+                const userResponse = await this.userService.getUserByUsername(request.params.username);
+
+
+                response.status(userResponse.status).send({
+                    ...userResponse
+                });
+            } else {
+                response.status(404).json({
+                    status: 404,
+                    message: 'User not found'
+                })
+            }
+        } catch (error) {
+            response.status(500).json({
+                status: 500,
+                message: 'Internal server error',
+                data: error
+            })
+        }
+    }
+
     async login(request: Request, response: Response): Promise<void> {
         const errors = validationResult(request);
 

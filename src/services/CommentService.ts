@@ -5,12 +5,15 @@ import { Timestamp } from 'firebase/firestore';
 import { Comment } from '../types/entities/Comment';
 import { formatCommentData } from '../utils/formatData';
 import { firestore } from 'firebase-admin';
+import { RedisClientType } from 'redis';
 
 export class CommentService {
     private db: FirestoreCollections;
+    private redisClient: RedisClientType;
 
-    constructor(db: FirestoreCollections) {
+    constructor(db: FirestoreCollections, redisClient: RedisClientType) {
         this.db = db;
+        this.redisClient = redisClient;
     }
 
     async createComment(commentData: Comment, postsId: string): Promise<IResBody> {
@@ -31,19 +34,66 @@ export class CommentService {
 
 
     async getCommentsByPostId(postId: string): Promise<IResBody> {
+        const cachekey = 'commentsBy' + postId;
+
+        let comments: Comment[] = [];
+
+        const cachedComments = await this.redisClient.get(cachekey);
+
+        if (cachedComments) {
+            comments = JSON.parse(cachedComments);
+        } else {
+            const commentsQuerySnapshot = await this.db.comments.where('postId', '==', postId).get();
+
+            for (const doc of commentsQuerySnapshot.docs) {
+                const formadatacomment = formatCommentData(doc.data());
+                comments.push({
+                    id: doc.id,
+                    ...formadatacomment
+                });
+            }
+
+            await this.redisClient.set(cachekey, JSON.stringify(comments), {
+                EX: 3600
+            });
+        }
+
+        comments.sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+
+        if (comments.length === 0) {
+            return {
+                status: 404,
+                message: 'No comments found'
+            };
+        }
+
+        return {
+            status: 200,
+            message: 'Comments retrieved successfully!',
+            data: comments
+        };
+    }
+
+    async getCommentsByUserId(userId: string): Promise<IResBody> {
+
         const comments: Comment[] = [];
-        const commentsQuerySnapshot = await this.db.comments.where('postId', '==', postId).get();
+        const commentsQuerySnapshot = await this.db.comments.where('createdBy', '==', userId).get();
+
+        if (commentsQuerySnapshot.empty) {
+            return {
+                status: 404,
+                message: 'Comments not found'
+            }
+        }
 
         for (const doc of commentsQuerySnapshot.docs) {
             const formadatacomment = formatCommentData(doc.data());
             comments.push({
                 id: doc.id,
-                ...formadatacomment,
-                createdAt: (doc.data()?.createdAt as Timestamp)?.toDate(),
-                updatedAt: (doc.data()?.updatedAt as Timestamp)?.toDate(),
+                ...formadatacomment
             });
-        }
 
+        }
         return {
             status: 200,
             message: 'Comments retrieved successfully!',
@@ -125,9 +175,7 @@ export class CommentService {
             message: 'Comment retrieved successfully',
             data: {
                 id: commentId,
-                ...formatdatacomment,
-                createdAt: (commentQuerySnapshot.data()?.createdAt as Timestamp)?.toDate(),
-                updatedAt: (commentQuerySnapshot.data()?.updatedAt as Timestamp)?.toDate(),
+                ...formatdatacomment
             }
         }
     }
