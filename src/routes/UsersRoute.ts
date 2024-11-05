@@ -18,7 +18,7 @@ export class UsersRoute {
         router.get('/users', authJwt.verifyToken, this.userController.getUsers.bind(this.userController));
         router.post('/auth/login', validateLoginUser, this.userController.login.bind(this.userController));
         router.get('/users/:id', authJwt.verifyToken, this.userController.getUserById.bind(this.userController));
-        router.get('/users/username/:username', authJwt.verifyToken, this.userController.getUserByUsername.bind(this.userController));
+        router.get('/users/username/:username', this.userController.getUserByUsername.bind(this.userController));
         router.put('/users/userId/:id', authJwt.verifyToken, this.userController.updateUser.bind(this.userController));
         router.put('/users/me', authJwt.verifyToken, this.userController.updateConnectedUser.bind(this.userController));
         router.delete('/users/:id', authJwt.verifyToken, this.userController.deleteUser.bind(this.userController));
